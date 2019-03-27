@@ -64,22 +64,23 @@ namespace Benchmark
             for (int tries = 0; tries < 10; tries++)
             {
                 stopwatch.Restart();
-                double[,] results = new double[Settings.NrOfIterations, Settings.NrOfNodes];
+                double[] results = new double[Settings.NrOfIterations * Settings.NrOfNodes];
 
-                results[0, 0] = 1;
+                results[0] = 1;
 
                 for (int iteration = 1; iteration < Settings.NrOfIterations; iteration++)
                 {
+                    int index = iteration * Settings.NrOfNodes;
                     for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
                     {
-                        if (results[iteration - 1, nodeId] != 0.0)
+                        if (results[index - Settings.NrOfNodes + nodeId] != 0.0)
                         {
-                            double nodeWeight = results[iteration - 1, nodeId];
+                            double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
                             for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
                             {
                                 Node node = nodes[nodeId];
                                 Link link = node.Links[linkId];
-                                results[iteration, link.NodeId] += link.Weight * nodeWeight;
+                                results[index + nodeId] += link.Weight * nodeWeight;
                             }
                         }
                     }
@@ -90,7 +91,7 @@ namespace Benchmark
                 {
                     for (int iteration = 0; iteration < Settings.NrOfIterations; iteration++)
                     {
-                        endResult[nodeId] += results[iteration, nodeId];
+                        endResult[nodeId] += results[iteration*Settings.NrOfNodes + nodeId];
                     }
                 }
 

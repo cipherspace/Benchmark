@@ -75,7 +75,7 @@ namespace Benchmark
                     for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
                     {
                         double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
-                        if (nodeWeight != 0.0)
+                        if (nodeWeight != 0.0) 
                         {
                             for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
                             {

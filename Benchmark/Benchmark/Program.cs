@@ -61,38 +61,42 @@ namespace Benchmark
             }
             Trace.WriteLine(String.Format("Init in {0}ms", stopwatch.Elapsed.TotalMilliseconds));
 
-            stopwatch.Restart();
-            double[,] results = new double[Settings.NrOfIterations, Settings.NrOfNodes];
-
-            results[0, 0] = 1;
-
-            for (int iteration = 1; iteration < Settings.NrOfIterations; iteration++)
+            for (int tries = 0; tries < 10; tries++)
             {
-                for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
+                stopwatch.Restart();
+                double[,] results = new double[Settings.NrOfIterations, Settings.NrOfNodes];
+
+                results[0, 0] = 1;
+
+                for (int iteration = 1; iteration < Settings.NrOfIterations; iteration++)
                 {
-                    if (results[iteration - 1, nodeId] != 0.0)
+                    for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
                     {
-                        for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
+                        if (results[iteration - 1, nodeId] != 0.0)
                         {
-                            Node node = nodes[nodeId];
-                            Link link = node.Links[linkId];
-                            results[iteration, link.NodeId] += link.Weight * results[iteration - 1, nodeId];
+                            double nodeWeight = results[iteration - 1, nodeId];
+                            for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
+                            {
+                                Node node = nodes[nodeId];
+                                Link link = node.Links[linkId];
+                                results[iteration, link.NodeId] += link.Weight * nodeWeight;
+                            }
                         }
                     }
                 }
-            }
-            double[] endResult = new double[Settings.NrOfNodes];
+                double[] endResult = new double[Settings.NrOfNodes];
 
-            for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
-            {
-                for (int iteration = 0; iteration < Settings.NrOfIterations; iteration++)
+                for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
                 {
-                    endResult[nodeId] += results[iteration, nodeId];
+                    for (int iteration = 0; iteration < Settings.NrOfIterations; iteration++)
+                    {
+                        endResult[nodeId] += results[iteration, nodeId];
+                    }
                 }
+
+
+                Trace.WriteLine(String.Format("Calculate in {0}ms", stopwatch.Elapsed.TotalMilliseconds));
             }
-
-
-            Trace.WriteLine(String.Format("Calculate in {0}ms", stopwatch.Elapsed.TotalMilliseconds));
         }
 
 

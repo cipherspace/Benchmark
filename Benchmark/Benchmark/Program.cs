@@ -60,6 +60,7 @@ namespace Benchmark
                 }
             }
             Trace.WriteLine(String.Format("Init in {0}ms", stopwatch.Elapsed.TotalMilliseconds));
+            double[] endResult = new double[Settings.NrOfNodes]; ;
 
             for (int tries = 0; tries < 10; tries++)
             {
@@ -73,19 +74,19 @@ namespace Benchmark
                     int index = iteration * Settings.NrOfNodes;
                     for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
                     {
-                        if (results[index - Settings.NrOfNodes + nodeId] != 0.0)
+                        double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
+                        if (nodeWeight != 0.0)
                         {
-                            double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
                             for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
                             {
                                 Node node = nodes[nodeId];
                                 Link link = node.Links[linkId];
-                                results[index + nodeId] += link.Weight * nodeWeight;
+                                results[index + link.NodeId] += link.Weight * nodeWeight;
                             }
                         }
                     }
                 }
-                double[] endResult = new double[Settings.NrOfNodes];
+                endResult = new double[Settings.NrOfNodes];
 
                 for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
                 {
@@ -97,6 +98,11 @@ namespace Benchmark
 
 
                 Trace.WriteLine(String.Format("Calculate in {0}ms", stopwatch.Elapsed.TotalMilliseconds));
+            }
+
+            for(int i = 0; i < 100; i++)
+            {
+                Trace.Write(String.Format("{0} ", endResult[i]));
             }
         }
 

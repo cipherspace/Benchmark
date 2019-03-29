@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Benchmark
 {
@@ -72,19 +73,22 @@ namespace Benchmark
                 for (int iteration = 1; iteration < Settings.NrOfIterations; iteration++)
                 {
                     int index = iteration * Settings.NrOfNodes;
-                    for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
-                    {
-                        double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
-                        if (nodeWeight != 0.0) 
-                        {
-                            for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
-                            {
-                                Node node = nodes[nodeId];
-                                Link link = node.Links[linkId];
-                                results[index + link.NodeId] += link.Weight * nodeWeight;
-                            }
-                        }
-                    }
+                    Parallel.For(0, Settings.NrOfNodes, (nodeId) =>
+                   {
+                       double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
+                       if (nodeWeight != 0.0)
+                       {
+                           for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
+                           {
+                               Node node = nodes[nodeId];
+                               Link link = node.Links[linkId];
+                               lock(nodes[link.NodeId])
+                               {
+                                   results[index + link.NodeId] += link.Weight * nodeWeight;
+                               }
+                           }
+                       }
+                   });
                 }
                 endResult = new double[Settings.NrOfNodes];
 
@@ -92,7 +96,7 @@ namespace Benchmark
                 {
                     for (int iteration = 0; iteration < Settings.NrOfIterations; iteration++)
                     {
-                        endResult[nodeId] += results[iteration*Settings.NrOfNodes + nodeId];
+                        endResult[nodeId] += results[iteration * Settings.NrOfNodes + nodeId];
                     }
                 }
 
@@ -100,7 +104,7 @@ namespace Benchmark
                 Trace.WriteLine(String.Format("Calculate in {0}ms", stopwatch.Elapsed.TotalMilliseconds));
             }
 
-            for(int i = 0; i < 100; i++)
+            for (int i = 0; i < 100; i++)
             {
                 Trace.Write(String.Format("{0} ", endResult[i]));
             }

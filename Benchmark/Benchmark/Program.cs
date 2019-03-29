@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 
 namespace Benchmark
 {
@@ -62,7 +61,7 @@ namespace Benchmark
             }
             Trace.WriteLine(String.Format("Init in {0}ms", stopwatch.Elapsed.TotalMilliseconds));
             double[] endResult = new double[Settings.NrOfNodes]; ;
-            int nrOfProcessors = 15;
+
             for (int tries = 0; tries < 10; tries++)
             {
                 stopwatch.Restart();
@@ -73,31 +72,19 @@ namespace Benchmark
                 for (int iteration = 1; iteration < Settings.NrOfIterations; iteration++)
                 {
                     int index = iteration * Settings.NrOfNodes;
-
-                    double[,] resultsPerProcessor = new double[Settings.NrOfNodes,nrOfProcessors];
-                    Parallel.For(0, nrOfProcessors, (processor) =>
-                   {
-                       for (int nodeId = Settings.NrOfNodes / nrOfProcessors * processor; nodeId < Settings.NrOfNodes / nrOfProcessors * (processor + 1); nodeId++)
-                       {
-                           double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
-                           if (nodeWeight != 0.0)
-                           {
-                               for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
-                               {
-                                   Node node = nodes[nodeId];
-                                   Link link = node.Links[linkId];
-                                   resultsPerProcessor[link.NodeId, processor] += link.Weight * nodeWeight;
-                               }
-                           }
-                       }
-                   });
-                    Parallel.For(0, Settings.NrOfNodes, (nodeId) =>
+                    for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
                     {
-                        for(int processor = 0; processor < nrOfProcessors; processor++)
+                        double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
+                        if (nodeWeight != 0.0) 
                         {
-                            results[index + nodeId] += resultsPerProcessor[nodeId,processor];
+                            for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
+                            {
+                                Node node = nodes[nodeId];
+                                Link link = node.Links[linkId];
+                                results[index + link.NodeId] += link.Weight * nodeWeight;
+                            }
                         }
-                    });
+                    }
                 }
                 endResult = new double[Settings.NrOfNodes];
 

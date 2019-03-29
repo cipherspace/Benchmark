@@ -63,46 +63,66 @@ namespace Benchmark
             double[] endResult = new double[Settings.NrOfNodes]; ;
 
             for (int tries = 0; tries < 10; tries++)
-            {
-                stopwatch.Restart();
-                double[] results = new double[Settings.NrOfIterations * Settings.NrOfNodes];
-
-                results[0] = 1;
-
-                for (int iteration = 1; iteration < Settings.NrOfIterations; iteration++)
+                unsafe
                 {
-                    int index = iteration * Settings.NrOfNodes;
-                    for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
+
+                    int nrOfCalculations = 0;
+                    stopwatch.Restart();
+                    double[] results = new double[Settings.NrOfIterations * Settings.NrOfNodes];
+                    fixed (double* p = &results[0])
                     {
-                        double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
-                        if (nodeWeight != 0.0) 
+                        results[0] = 1;
+
+                        for (int iteration = 1; iteration < Settings.NrOfIterations; iteration++)
                         {
-                            for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
+                            int index = iteration * Settings.NrOfNodes;
+                            for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
                             {
-                                Node node = nodes[nodeId];
-                                Link link = node.Links[linkId];
-                                results[index + link.NodeId] += link.Weight * nodeWeight;
+                                double nodeWeight = p[index - Settings.NrOfNodes + nodeId];
+                                if (nodeWeight != 0.0)
+                                {
+                                    for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
+                                    {
+                                        Node node = nodes[nodeId];
+                                        Link link = node.Links[linkId];
+                                        p[index + link.NodeId] += link.Weight * nodeWeight;
+                                        nrOfCalculations++;
+                                    }
+                                }
                             }
                         }
                     }
-                }
-                endResult = new double[Settings.NrOfNodes];
+                    endResult = new double[Settings.NrOfNodes];
 
-                Stopwatch stopwatch2 = new Stopwatch();
-                stopwatch2.Start();
-                for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
-                {
-                    for (int iteration = 0; iteration < Settings.NrOfIterations; iteration++)
+                    Stopwatch stopwatch2 = new Stopwatch();
+                    stopwatch2.Start();
+                    for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
                     {
-                        endResult[nodeId] += results[iteration*Settings.NrOfNodes + nodeId];
+                        for (int iteration = 0; iteration < Settings.NrOfIterations; iteration++)
+                        {
+                            endResult[nodeId] += results[iteration * Settings.NrOfNodes + nodeId];
+                        }
                     }
+
+
+                    Trace.WriteLine(String.Format("Calculate in {0}ms ({1}ms) {2}", stopwatch.Elapsed.TotalMilliseconds, stopwatch2.Elapsed.TotalMilliseconds, nrOfCalculations));
+
+
+                    nrOfCalculations = 0;
+                    double result = 0;
+                    stopwatch.Restart();
+                    for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
+                    {
+                        for (int i = 0; i < Settings.NrOfIterations * Settings.NrOfLinks; i++)
+                        {
+                            result += result * result;
+                            nrOfCalculations++;
+                        }
+                    }
+                    Trace.WriteLine(String.Format("Calculate in {0}ms ({1} {2}", stopwatch.Elapsed.TotalMilliseconds, nrOfCalculations, result));
                 }
 
-
-                Trace.WriteLine(String.Format("Calculate in {0}ms ({1}ms)", stopwatch.Elapsed.TotalMilliseconds, stopwatch2.Elapsed.TotalMilliseconds));
-            }
-
-            for(int i = 0; i < 100; i++)
+            for (int i = 0; i < 100; i++)
             {
                 Trace.Write(String.Format("{0} ", endResult[i]));
             }

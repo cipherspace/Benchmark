@@ -88,6 +88,8 @@ namespace Benchmark
                 }
                 endResult = new double[Settings.NrOfNodes];
 
+                Stopwatch stopwatch2 = new Stopwatch();
+                stopwatch2.Start();
                 for (int nodeId = 0; nodeId < Settings.NrOfNodes; nodeId++)
                 {
                     for (int iteration = 0; iteration < Settings.NrOfIterations; iteration++)
@@ -97,7 +99,7 @@ namespace Benchmark
                 }
 
 
-                Trace.WriteLine(String.Format("Calculate in {0}ms", stopwatch.Elapsed.TotalMilliseconds));
+                Trace.WriteLine(String.Format("Calculate in {0}ms ({1}ms)", stopwatch.Elapsed.TotalMilliseconds, stopwatch2.Elapsed.TotalMilliseconds));
             }
 
             for(int i = 0; i < 100; i++)

@@ -62,7 +62,7 @@ namespace Benchmark
             }
             Trace.WriteLine(String.Format("Init in {0}ms", stopwatch.Elapsed.TotalMilliseconds));
             double[] endResult = new double[Settings.NrOfNodes]; ;
-
+            int nrOfProcessors = 15;
             for (int tries = 0; tries < 10; tries++)
             {
                 stopwatch.Restart();
@@ -73,22 +73,31 @@ namespace Benchmark
                 for (int iteration = 1; iteration < Settings.NrOfIterations; iteration++)
                 {
                     int index = iteration * Settings.NrOfNodes;
-                    Parallel.For(0, Settings.NrOfNodes, (nodeId) =>
+
+                    double[,] resultsPerProcessor = new double[Settings.NrOfNodes,nrOfProcessors];
+                    Parallel.For(0, nrOfProcessors, (processor) =>
                    {
-                       double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
-                       if (nodeWeight != 0.0)
+                       for (int nodeId = Settings.NrOfNodes / nrOfProcessors * processor; nodeId < Settings.NrOfNodes / nrOfProcessors * (processor + 1); nodeId++)
                        {
-                           for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
+                           double nodeWeight = results[index - Settings.NrOfNodes + nodeId];
+                           if (nodeWeight != 0.0)
                            {
-                               Node node = nodes[nodeId];
-                               Link link = node.Links[linkId];
-                               lock(nodes[link.NodeId])
+                               for (int linkId = 0; linkId < Settings.NrOfLinks; linkId++)
                                {
-                                   results[index + link.NodeId] += link.Weight * nodeWeight;
+                                   Node node = nodes[nodeId];
+                                   Link link = node.Links[linkId];
+                                   resultsPerProcessor[link.NodeId, processor] += link.Weight * nodeWeight;
                                }
                            }
                        }
                    });
+                    Parallel.For(0, Settings.NrOfNodes, (nodeId) =>
+                    {
+                        for(int processor = 0; processor < nrOfProcessors; processor++)
+                        {
+                            results[index + nodeId] += resultsPerProcessor[nodeId,processor];
+                        }
+                    });
                 }
                 endResult = new double[Settings.NrOfNodes];
 
@@ -96,7 +105,7 @@ namespace Benchmark
                 {
                     for (int iteration = 0; iteration < Settings.NrOfIterations; iteration++)
                     {
-                        endResult[nodeId] += results[iteration * Settings.NrOfNodes + nodeId];
+                        endResult[nodeId] += results[iteration*Settings.NrOfNodes + nodeId];
                     }
                 }
 
@@ -104,7 +113,7 @@ namespace Benchmark
                 Trace.WriteLine(String.Format("Calculate in {0}ms", stopwatch.Elapsed.TotalMilliseconds));
             }
 
-            for (int i = 0; i < 100; i++)
+            for(int i = 0; i < 100; i++)
             {
                 Trace.Write(String.Format("{0} ", endResult[i]));
             }
